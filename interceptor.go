@@ -3,6 +3,8 @@ package authutil
 import (
 	"context"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	commonpb "github.com/openfms/protos/gen/common/v1"
+	"golang.org/x/exp/slices"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -10,6 +12,7 @@ import (
 
 type AuthServerInterface interface {
 	GetAuthManager() *AuthManager
+	GetRoleAccess(fullMethod string) []commonpb.UserRole
 }
 
 func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
@@ -22,6 +25,10 @@ func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 			claims, err := authManager.ExtractContext(ctx)
 			if err != nil {
 				return nil, status.Error(codes.Unauthenticated, err.Error())
+			}
+			perms := service.GetRoleAccess(info.FullMethod)
+			if len(perms) > 0 && !slices.Contains(perms, claims.Role) {
+				return nil, status.Error(codes.Unauthenticated, "unauthenticated request")
 			}
 			newCtx := context.WithValue(ctx, ClaimKey, claims)
 			return handler(newCtx, req)
@@ -39,6 +46,10 @@ func StreamServerInterceptor() grpc.StreamServerInterceptor {
 				claim, err := authManager.ExtractContext(stream.Context())
 				if err != nil {
 					return status.Error(codes.Unauthenticated, err.Error())
+				}
+				perms := authSrv.GetRoleAccess(info.FullMethod)
+				if len(perms) > 0 && !slices.Contains(perms, claim.Role) {
+					return status.Error(codes.Unauthenticated, "unauthenticated request")
 				}
 				newCtx = context.WithValue(stream.Context(), ClaimKey, claim)
 			} else {

@@ -18,6 +18,7 @@ type authKey string
 type TokenUserClaims struct {
 	jwt.RegisteredClaims
 	UserID    uint32            `json:"id"`
+	UserName  string            `json:"un"`
 	UserAgent string            `json:"ua"`
 	IP        string            `json:"ip"`
 	Email     string            `json:"em"`
@@ -56,15 +57,16 @@ func (am *AuthManager) GenerateNewToken(userInfo *userpb.User) (string, error) {
 	userClaims := TokenUserClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    am.issuer,
-			Subject:   userInfo.FirstName,
+			Subject:   userInfo.FirstName + " " + userInfo.LastName,
 			ID:        uuid.New().String(),
 			IssuedAt:  jwt.NewNumericDate(time.Now().UTC()),
 			ExpiresAt: jwt.NewNumericDate(time.Now().UTC().Add(am.tokenValidTime)),
 			NotBefore: jwt.NewNumericDate(time.Now().UTC()),
 		},
-		Email:  userInfo.Email,
-		UserID: userInfo.Id,
-		Role:   userInfo.Role,
+		Email:    userInfo.Email,
+		UserID:   userInfo.Id,
+		Role:     userInfo.Role,
+		UserName: userInfo.UserName,
 	}
 	return am.generateToken(userClaims)
 }
