@@ -2,6 +2,7 @@ package authutil
 
 import (
 	"context"
+	"crypto/rand"
 	"errors"
 	"fmt"
 	"github.com/golang-jwt/jwt/v4"
@@ -114,4 +115,12 @@ func (am *AuthManager) ExtractContext(ctx context.Context) (*TokenUserClaims, er
 func TokenClaimsFromCtx(ctx context.Context) (*TokenUserClaims, bool) {
 	claim, ok := ctx.Value(ClaimKey).(*TokenUserClaims)
 	return claim, ok
+}
+
+func GenerateRandomSecretKey(len int) (string, error) {
+	b := make([]byte, len)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%X", b), nil
 }
