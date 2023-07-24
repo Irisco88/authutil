@@ -18,15 +18,15 @@ type AuthServerInterface interface {
 func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		if service, ok := info.Server.(AuthServerInterface); ok {
+			perms := service.GetRoleAccess(info.FullMethod)
 			authManager := service.GetAuthManager()
-			if authManager == nil {
+			if authManager == nil || len(perms) == 0 {
 				return handler(ctx, req)
 			}
 			claims, err := authManager.ExtractContext(ctx)
 			if err != nil {
 				return nil, status.Error(codes.Unauthenticated, err.Error())
 			}
-			perms := service.GetRoleAccess(info.FullMethod)
 			if len(perms) > 0 && !slices.Contains(perms, claims.Role) {
 				return nil, status.Error(codes.Unauthenticated, "unauthenticated request")
 			}
@@ -42,13 +42,13 @@ func StreamServerInterceptor() grpc.StreamServerInterceptor {
 		var newCtx context.Context
 		if authSrv, ok := srv.(AuthServerInterface); ok {
 			authManager := authSrv.GetAuthManager()
-			if authManager != nil {
+			perms := authSrv.GetRoleAccess(info.FullMethod)
+			if authManager != nil && len(perms) > 0 {
 				claim, err := authManager.ExtractContext(stream.Context())
 				if err != nil {
 					return status.Error(codes.Unauthenticated, err.Error())
 				}
-				perms := authSrv.GetRoleAccess(info.FullMethod)
-				if len(perms) > 0 && !slices.Contains(perms, claim.Role) {
+				if !slices.Contains(perms, claim.Role) {
 					return status.Error(codes.Unauthenticated, "unauthenticated request")
 				}
 				newCtx = context.WithValue(stream.Context(), ClaimKey, claim)

@@ -109,6 +109,9 @@ func (am *AuthManager) ExtractContext(ctx context.Context) (*TokenUserClaims, er
 		return nil, ErrNotFoundToken
 	}
 	token := values[0]
+	if len(token) == 0 {
+		return nil, ErrNotFoundToken
+	}
 	return am.VerifyToken(token)
 }
 
