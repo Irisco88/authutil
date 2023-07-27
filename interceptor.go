@@ -8,6 +8,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"net/http"
 )
 
 type AuthServerInterface interface {
@@ -61,5 +62,36 @@ func StreamServerInterceptor() grpc.StreamServerInterceptor {
 		wrapped := grpc_middleware.WrapServerStream(stream)
 		wrapped.WrappedContext = newCtx
 		return handler(srv, wrapped)
+	}
+}
+
+func MuxAuthMiddleware(srv any) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(resp http.ResponseWriter, req *http.Request) {
+			if service, ok := srv.(AuthServerInterface); ok {
+				authManager := service.GetAuthManager()
+				perms := service.GetRoleAccess(req.URL.Path)
+				if authManager == nil || len(perms) == 0 {
+					next.ServeHTTP(resp, req)
+				}
+				token := req.Header.Get("token")
+				if len(token) == 0 {
+					http.Error(resp, "token not found", http.StatusUnauthorized)
+					return
+				}
+				claims, err := authManager.VerifyToken(token)
+				if err != nil {
+					http.Error(resp, err.Error(), http.StatusUnauthorized)
+					return
+				}
+				if !slices.Contains(perms, claims.Role) {
+					http.Error(resp, "unauthenticated request", http.StatusUnauthorized)
+					return
+				}
+				newCtx := context.WithValue(req.Context(), ClaimKey, claims)
+				next.ServeHTTP(resp, req.WithContext(newCtx))
+			}
+			next.ServeHTTP(resp, req)
+		})
 	}
 }
