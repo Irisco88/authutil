@@ -90,8 +90,9 @@ func MuxAuthMiddleware(srv any) func(http.Handler) http.Handler {
 				}
 				newCtx := context.WithValue(req.Context(), ClaimKey, claims)
 				next.ServeHTTP(resp, req.WithContext(newCtx))
+			} else {
+				next.ServeHTTP(resp, req)
 			}
-			next.ServeHTTP(resp, req)
 		})
 	}
 }
