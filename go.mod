@@ -6,14 +6,14 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/google/uuid v1.3.1
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
-	github.com/irisco88/protos v1.0.12
+	github.com/irisco88/protos v1.0.14
 	golang.org/x/exp v0.0.0-20230713183714-613f0c0eb8a1
 	google.golang.org/grpc v1.59.0
 )
 
 require (
 	github.com/golang/protobuf v1.5.3 // indirect
-	github.com/grpc-ecosystem/grpc-gateway/v2 v2.16.2 // indirect
+	github.com/grpc-ecosystem/grpc-gateway/v2 v2.18.0 // indirect
 	golang.org/x/net v0.15.0 // indirect
 	golang.org/x/sys v0.12.0 // indirect
 	golang.org/x/text v0.13.0 // indirect
