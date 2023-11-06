@@ -3,7 +3,7 @@ package authutil
 import (
 	"context"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	commonpb "github.com/irisco88/protos/gen/common/v1"
+	commonpb "github.com/irisco88/protos/gen/common/v2"
 	"golang.org/x/exp/slices"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
